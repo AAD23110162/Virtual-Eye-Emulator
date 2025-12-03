@@ -1,0 +1,85 @@
+@startuml
+title Arquitectura: Virtual Eye Emulator - Diagrama a bloques
+
+' Definición de componentes principales
+package "Entrada" {
+  [Cámara (Webcam)] as Camera
+}
+
+package "Procesamiento" {
+  [Captura de Frame] as Capture
+  [Preprocesamiento (BGR→RGB, Flip)] as Preproc
+  [MediaPipe Face Mesh] as FaceMesh
+  [Landmark Processor] as LandmarkProc
+  [EyeTracker Module\n(EAR, Iris, Brow)] as EyeTracker
+}
+
+package "Visualización" {
+  [Ventana Principal] as MainWindow
+  [Ventana Virtual (Renderer)] as Renderer
+  [Ventana de Escaneo (Landmarks)] as ScanView
+}
+
+package "Grabación y Almacenamiento" {
+  [Recorder (JSON metadata)] as RecorderJSON
+  [VideoWriter (MP4)] as VideoWriter
+  [Storage (disco/SD)] as Storage
+}
+
+package "Integración Embebida" {
+  [USB / Serial] as USBSerial
+  [ESP32 + OLED (Receptor)] as ESP32
+}
+
+package "Configuración y Utilidades" {
+  [constants.py / Config] as Config
+  [Logging / Metrics] as Logging
+}
+
+' Flujos de datos
+Camera --> Capture : frames
+Capture --> Preproc : frame
+Preproc --> FaceMesh : rgb_frame
+FaceMesh --> LandmarkProc : landmarks(468)
+LandmarkProc --> EyeTracker : eye_landmarks, iris_landmarks, brow_landmarks
+EyeTracker --> Renderer : gaze_pos, eye_state, emulation_params
+EyeTracker --> RecorderJSON : events, metrics
+Renderer --> MainWindow : visual frames
+Renderer --> ScanView : overlays / landmarks
+
+' Grabación
+Renderer --> VideoWriter : frames (resized)
+RecorderJSON --> Storage : metadata.json
+VideoWriter --> Storage : recording.mp4
+
+' Integración con microcontrolador
+RecorderJSON --> USBSerial : stream / file
+USBSerial --> ESP32 : protocolo optimizado (JSON)
+
+' Config y métricas
+Config --> FaceMesh : landmark indices, params
+Config --> EyeTracker : thresholds, smoothing, modes
+EyeTracker --> Logging : fps, latency, events
+
+' Notas
+note left of Camera
+  - Fuente de entrada (webcam)
+  - Soporta flip espejo
+end note
+
+note right of ESP32
+  - Reproduce gestos en pantalla OLED
+  - Recibe JSON optimizado
+end note
+
+note bottom of RecorderJSON
+  - Guarda secuencia de eventos y parámetros
+  - Permite reproducción en dispositivos embebidos
+end note
+
+' Estilos (mejora visual)
+skinparam packageStyle rect
+skinparam componentStyle rectangle
+skinparam handwritten false
+
+@enduml

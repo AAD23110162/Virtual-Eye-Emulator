@@ -1,5 +1,6 @@
-# Versión simplificada del Eye Tracker para debugging
-# Alejandro Aguirre Diaz 23110162
+# Face Detector.py
+# Versión simplificada del sistema de seguimiento ocular para debugging
+# Autor: Alejandro Aguirre Diaz
 
 import cv2
 import numpy as np
