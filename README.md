@@ -97,20 +97,21 @@ La modulación de amplitud (AM) permite representar patrones de apertura/cierre 
 - **Testing:** Pruebas continuas con escenarios de interacción humano-robot.
 
 ### 7.2 Arquitectura del Sistema
-*(Poner diagrama de bloques en la versión final)*
+
+![IMG2](Imagenes/IMG2.png)
 
 ### 7.3 Fases de Desarrollo
-- **Fase 1 — Fundamentos de Detección (Semana 1-2)**
+- **Fase 1 — Fundamentos de Detección (Semana 1)**
 	- Implementación MediaPipe Face Mesh para detección facial.
 	- Desarrollo de algoritmos EAR para detección precisa de parpadeos.
 	- Sistema básico de tracking de dirección de mirada.
 
-- **Fase 2 — Emulación Visual Avanzada (Semana 3-4)**
+- **Fase 2 — Emulación Visual Avanzada (Semana 2)**
 	- Desarrollo de 3 modos de emulación visual diferenciados.
 	- Interfaz de usuario con controles en tiempo real.
 	- Optimización de rendimiento gráfico para aplicaciones robóticas.
 
-- **Fase 3 — Integración y Grabación (Semana 5-6)**
+- **Fase 3 — Integración y Grabación (Semana 3)**
 	- Sistema de captura de gestos a 30 FPS.
 	- Formato JSON optimizado para dispositivos ESP32.
 
@@ -134,28 +135,61 @@ Archivos principales incluidos en este repositorio:
 - Emulación multi-modal: modos **Rectángulos**, **Redondeados** y **AM**.
 - Grabación optimizada: Captura de frames y metadata en JSON/MP4 para reproducción y transferencia a microcontroladores.
 
-## 9. Análisis del código y recomendaciones (resumen)
+## 9. Análisis del código
+Esta sección compara y sintetiza los tres módulos principales del repositorio —`Face_Detector.py`, `Virtual_Eye_Emulator.py` y `Virtual_Eye_Emulator_2.py`—, y propone acciones priorizadas para mejorar robustez, mantenimiento y facilidad de prueba.
 
-### 9.1 Resumen rápido
-- `Face_Detector.py`: herramienta ligera y útil para validar landmarks y centrado ocular.
-- `Virtual_Eye_Emulator.py`: implementación completa con cálculos EAR, detección de parpadeo/guiño, estimación de mirada (iris), múltiples modos de visualización y grabación.
+### 9.1 Síntesis rápida por fichero
+- `Face_Detector.py` (herramienta de debugging): código ligero y fácil de ejecutar. Su objetivo es visualizar todos los landmarks y ofrecer una ventana de «escaneo» para calibración. Ventajas: simple, rápido, útil para pruebas manuales. Riesgos: usa índices de landmarks que pueden diferir de la versión productiva (consistencia), y no incluye protecciones numéricas ni logging detallado.
+- `Virtual_Eye_Emulator.py` (implementación completa): integra MediaPipe Face Mesh, cálculo EAR, estimación de iris, detección de parpadeos/guiños, varios modos de visualización y grabación JSON/MP4. Es la versión base orientada a producción, pero contiene áreas mejorables en manejo de errores, validación de tamaños y parametrización.
+- `Virtual_Eye_Emulator_2.py` (versión avanzada/tunable): refina umbrales por defecto, reduce history_size para mayor responsividad, incorpora modos gráficos y un sistema de grabación más completo. Aporta mayor detalle funcional, pero también repite muchas estructuras (índices, validaciones) que convendría unificar.	
 
-### 9.2 Problemas detectados (prioritarios)
-1. **Consistencia de índices de landmarks:** en `Face_Detector.py` algunas constantes de ojo están invertidas respecto a `Virtual_Eye_Emulator.py`. Unificar la convención y centralizar índices en una constante compartida.
-2. **Manejo de excepciones:** existen bloques `except:` silenciosos; reemplazar por `except Exception as e:` y loggear el error.
-3. **División en EAR:** asegurar que el denominador no sea cero (usar epsilon/clamp).
-4. **Tamaño y consistencia de frames durante grabación:** validar/rescalar los frames antes de pasarlos a `cv2.VideoWriter`.
-5. **Rendimiento:** `refine_landmarks=True` y dibujado completo del mesh afectan FPS en hardware modesto; añadir flag para desactivar overlays en tiempo real.
-6. **Lógica de parpadeo/guiño:** exponer umbrales y contadores como parámetros ajustables y revisar transiciones para evitar estados "pegados".
+### 9.2 Face_Detector.py
 
-### 9.3 Acciones sugeridas (de más a menos urgentes)
-- Unificar índices LEFT/RIGHT en un archivo de configuración o módulo `constants.py`.
-- Reemplazar `except:` por `except Exception as e:` y añadir logging mínimo.
-- Añadir epsilon en cálculo EAR y proteger divisiones.
-- Asegurar resize consistente de frames para la grabación.
-- Añadir opción CLI/flags para ajustar `blink_threshold`, `wink_threshold` y `consecutive_frames`.
-- Añadir pruebas unitarias para cálculo EAR y detección de parpadeo.
+- **Propósito y alcance:** Herramienta ligera y orientada a debugging para inspeccionar landmarks de MediaPipe en tiempo real. Sirve para calibración visual rápida y para comprobar que la detección de puntos faciales está operativa en la cámara del desarrollador.
 
+- **Estructura principal:** contiene la clase `SimpleEyeTracker` con método `run()` que:
+	- Inicializa `mp.solutions.face_mesh.FaceMesh(refine_landmarks=False)` para menor coste.
+	- Captura frames de la cámara (flip espejo), procesa landmarks y dibuja el mesh en el frame principal.
+	- Genera una ventana `ESCANEO FACIAL` donde se pintan todos los landmarks como puntos rojos y se destacan ojos/contorno.
+	- Calcula centros de ojo promedio (promedio de los puntos del contorno) y pinta una emulación simple en `virtual_frame` (dos círculos que simulan ojos).
+
+- **Funciones clave:** dibujo de landmarks, cálculo simple de centro de ojo (media aritmética de puntos), emulación visual inmediata en una ventana separada.
+
+- **Salidas/artefactos:** ventanas OpenCV en pantalla: `Simple Eye Tracker - Principal`, `Simple Eye Tracker - Virtual`, `ESCANEO FACIAL - Landmarks en Tiempo Real`.
+
+### 9.3 Virtual_Eye_Emulator.py
+
+- **Propósito y alcance:** Implementación completa orientada a emulación visual estable y grabación. Integra cálculo de EAR, estimación del iris, detección de parpadeos/guiños, suavizado temporal y modos de visualización pensados para pantallas robóticas.
+
+- **Estructura principal y componentes:**
+	- Clase `EyeTracker` que inicializa MediaPipe `FaceMesh(refine_landmarks=True)` y utilidades de dibujo.
+	- Listas de índices para contornos oculares, iris y cejas (ej.: `LEFT_EYE_LANDMARKS`, `RIGHT_IRIS`, etc.).
+	- Métodos principales: `calculate_eye_aspect_ratio`, `get_eye_center`, `get_iris_center`, `get_eyebrow_height`, `detect_eye_state`, `detect_eye_movement`, `draw_virtual_eyes`, `start_recording`, `stop_recording`, `capture_frame_for_recording`, `process_frame`, `run_virtual_eye_tracker`.
+
+- **Comportamiento y parámetros por defecto:**
+	- Umbrales: `blink_threshold ≈ 0.20`, `wink_threshold ≈ 0.18`.
+	- Suavizado: `history_size = 3`, `consecutive_frames = 2` para detección responsiva.
+	- Modos gráficos: `RECTANGULOS`, `REDONDEADOS`, `AM`.
+
+- **Grabación y formatos:** guarda metadata en `Animaciones JSON` y vídeos en `AnimacionMP4` usando `cv2.VideoWriter` y un esquema JSON por frame para reproducción en sistemas embebidos (ESP32 u otros).
+
+
+### 9.4 Virtual_Eye_Emulator_2.py
+
+- **Propósito y alcance:** Versión avanzada y afinada del emulador que mantiene la interfaz y funcionalidades de la versión principal, pero con parámetros por defecto más agresivos (mayor responsividad), más lógica AM para emulación y gestión de grabación más completa.
+
+- **Diferencias relevantes respecto a la versión base:**
+	- Umbrales y timing afinados (`blink_threshold`, `wink_threshold`, `history_size`) para sensibilidad aumentada.
+	- Estado AM (`am_openness`, `am_phase`, `AM_FRAME_INTERVAL`) y funciones gráficas adicionales: `draw_am_wave`, `draw_rounded_rectangle_with_cut`, `draw_diagonal_rectangle`.
+	- Manejo extendido de grabación: control de `frame_interval`, `max_recording_time`, buffers para frames y metadata, y lógica para iniciar/detener guardado de `.json` y `.mp4`.
+
+- **Puntos fuertes:**
+	- Mayor expresividad visual (AM y recortes diagonales/redondeados) y parámetros listos para pruebas en pantallas embebidas.
+	- Mejor preparación de artefactos para reproducción (JSON/MP4) y estructura de carpetas ya automatizada.
+
+
+
+Estas tres descripciones completan la visión operativa del proyecto y orientan las próximas tareas de refactorización y endurecimiento del código.
 ## 10. Cómo probar rápido (entorno de desarrollo)
 
 **Requisitos (recomendados):** Python 3.10+, OpenCV, MediaPipe, NumPy, SciPy
@@ -201,6 +235,11 @@ python3 Virtual_Eye_Emulator.py
 - **Landmark indices:** Índices numéricos que identifican cada landmark en la malla facial; deben mantenerse consistentes entre módulos.
 - **Epsilon (ε):** Pequeño valor añadido en divisiones (p. ej. cálculo EAR) para evitar división por cero y estabilizar resultados.
 - **Smoothing (suavizado):** Filtro temporal aplicado a posiciones de mirada/parpadeo para reducir ruido y evitar oscilaciones rápidas.
+
+## 12. Videos de funcionamiento
+
+- TikTok — [Ver video de funcionamiento en TikTok](https://www.tiktok.com/@fiunva_/video/7579718908551220492)
+- Instagram (Reel) — [Ver video de funcionamiento en Instagram](https://www.instagram.com/p/DR0DPTjjPKV/)
 
 
 
