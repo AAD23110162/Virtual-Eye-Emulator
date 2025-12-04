@@ -1,5 +1,7 @@
 # Virtual Eye Emulator
 
+![IMG1](Imagenes/IMG1.png)
+
 **Sistema de emulación virtual de seguimiento ocular en tiempo real con MediaPipe para robótica interactiva**
 
 **Autor:** Alejandro Aguirre Díaz
