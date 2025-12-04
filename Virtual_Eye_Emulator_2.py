@@ -1,5 +1,5 @@
 
-# Emulador de vista virtual en tiempo real
+# Emulador de vista virtual en tiempo real 2
 # Autor: Alejandro Aguirre Diaz
 import cv2
 import numpy as np
