@@ -1,0 +1,41 @@
+@startuml
+!theme plain
+title Sistema de Seguimiento Ocular - Procesamiento y Grabación
+
+start
+
+:🎥 Cámara USB;
+note right: Captura video\n640x480 @ 30fps\nConexión USB estándar
+
+:⬇️ Preprocesamiento;
+note right: Flip horizontal (espejo)\nConversión BGR → RGB\nRedimensionado frame
+
+:🧠 MediaPipe Face Mesh;
+note right: Detección facial automática\n468 landmarks en tiempo real\nRefinamiento de puntos\nAnálisis iris y cejas
+
+:⚙️ Cálculo de Parámetros;
+note right: EAR (Eye Aspect Ratio)\nDirección de mirada\nAltura de cejas\nEstado ojos (parpadeo/guiño)
+
+:📊 Análisis Temporal;
+note right: Suavizado de movimientos\nHistorial de gestos\nDetección de cambios\nValidación de datos
+
+split
+:📺 Ventana Principal\nMalla Facial;
+note right: Video en tiempo real\nTeselación completa\nLandmarks superpuestos\nInformación parámetros
+split again
+:🖥️ Emulador Virtual\n3 Modos;
+note right: Modo Rectángulos\nModo Redondeados\nModo AM (Ondas)\nPanel de parámetros
+split again
+:🔍 Ventana Escaneo\nLandmarks;
+note right: Fondo blanco\nSolo puntos faciales\nPatrón de polígonos\nCentros de ojos
+end split
+
+:💾 Grabación JSON;
+note right: Captura 30 FPS\nMetadata temporal precisa\nEstados oculares\nPosiciones de mirada\nGuardado automático
+
+:📁 Almacenamiento;
+note right: Carpeta "Animaciones JSON"\nTimestamp automático\nFormato JSON optimizado\nListo para reproducción
+
+stop
+
+@enduml
