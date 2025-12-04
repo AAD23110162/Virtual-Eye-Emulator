@@ -1,9 +1,6 @@
-# Alejandro Aguirre Diaz 23110162
-# Emulador de vista virtual en tiempo real
-# Se debe encender la cámara, detectar el rostro más próximo a la cámara, y sus ojos, 
-# al mismo tiempo dentro de esa ventana o de otra ventana, se debe visualizar 2 rectángulos 
-# que emiten el movimiento de los ojos, el parpadeo el nivel de apertura etc
 
+# Emulador de vista virtual en tiempo real
+# Autor: Alejandro Aguirre Diaz
 import cv2
 import numpy as np
 import mediapipe as mp

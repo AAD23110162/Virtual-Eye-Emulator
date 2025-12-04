@@ -1,6 +1,22 @@
-# Face Detector.py
-# Versión simplificada del sistema de seguimiento ocular para debugging
-# Autor: Alejandro Aguirre Diaz
+"""
+Face_Detector.py
+
+Herramienta de depuración para inspección y calibración del Face Mesh (MediaPipe).
+
+Resumen:
+    Versión simplificada del sistema de seguimiento ocular destinada a pruebas
+    y visualización rápida de landmarks faciales. Permite comprobar detección
+    en la cámara, visualizar todos los puntos de la malla, y generar una vista
+    virtual simplificada de los ojos para calibración.
+
+Funcionalidad principal:
+    - Captura vídeo desde la cámara por defecto.
+    - Dibuja Face Mesh y landmarks en el frame principal.
+    - Muestra una ventana "ESCANEO FACIAL" con todos los landmarks marcados.
+    - Calcula centros de ojos y muestra una emulación virtual simple.
+
+Autor: Alejandro Aguirre Diaz
+"""
 
 import cv2
 import numpy as np
