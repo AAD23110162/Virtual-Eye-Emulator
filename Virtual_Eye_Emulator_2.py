@@ -1,6 +1,24 @@
 
-# Emulador de vista virtual en tiempo real 2
-# Autor: Alejandro Aguirre Diaz
+"""
+Virtual Eye Emulator — Emulador de vista virtual en tiempo real (versión 2)
+
+Descripción:
+    Este módulo implementa un emulador de "ojos virtuales" controlados por
+    detección facial usando MediaPipe Face Mesh. El sistema detecta parpadeos,
+    guiños, posición del iris y dirección de la mirada, y genera una vista
+    virtual con varios modos de visualización (RECTANGULOS, REDONDEADOS, AM).
+    Además soporta la grabación de animaciones (JSON) y la exportación a MP4.
+
+Contenido principal:
+    - Clase `EyeTracker`: inicializa MediaPipe, procesa frames de cámara,
+      calcula EAR, detecta estados y movimientos oculares, dibuja la emulación
+      virtual y gestiona la grabación de animaciones y video.
+    - Controles por teclado:
+        'q' salir, 'r' reset contadores, 'c' limpiar historial,
+        'm' cambiar modo, 'g' iniciar grabación, 'p' parar y guardar.
+
+Autor: Alejandro Aguirre Diaz
+"""
 import cv2
 import numpy as np
 import mediapipe as mp
